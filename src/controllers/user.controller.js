@@ -328,7 +328,7 @@ const updateCoverImage = asyncHandler(async(req,res)=>{
     const coverImageLocalPath = req.file?.path
 
     if(!coverImageLocalPath){
-        throw new ApiError(400, "Avatar File is Required")
+        throw new ApiError(400, "Cover File is Required")
     }
 
     const coverImage= await uploadOnCloudinary(coverImageLocalPath)
