@@ -1,4 +1,5 @@
 import {v2} from "cloudinary";
+import {extractPublicId} from "cloudinary-build-url";
 import fs from "fs";
 
 
@@ -32,4 +33,21 @@ const uploadOnCloudinary = async (localFilePath)=>{
     }
 }
 
-export {uploadOnCloudinary}
+const deleteFilesCloudnary = async(ImagePath)=>{  
+  
+  try{
+    const publicId = extractPublicId(ImagePath)
+    if(!publicId) return null;
+    const response = await v2.uploader.destroy(publicId)
+    //console.log(response)
+    return response;
+  }
+  catch(error){
+    return null;
+  }
+      
+}
+
+
+
+export {uploadOnCloudinary, deleteFilesCloudnary}

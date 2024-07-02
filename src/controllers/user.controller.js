@@ -1,9 +1,9 @@
 import {asyncHandler} from "../utils/asyncHandler.js"
 import {ApiError} from  "../utils/ApiError.js"
 import {User} from "../models/users.models.js"
-import {uploadOnCloudinary} from "../utils/FileUpload.js"
+import {uploadOnCloudinary, deleteFilesCloudnary} from "../utils/FileUploadAndDelete.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
-import {jwt} from "jwtwebtoken"
+import jwt from "jsonwebtoken"
 
 const generateAcessAndrefreshTokens =  async(userId)=>{
     try{
@@ -296,11 +296,14 @@ const updateAccountDetails = asyncHandler(async(req, res)=>{
 
 const updateAvatar = asyncHandler(async(req,res)=>{
 
-    const avatarLocalPath = req.file?.path
+    const avatarLocalPath = await req.file?.path
+
+    const imageTobeDeleted = await req.user?.coverImage
 
     if(!avatarLocalPath){
         throw new ApiError(400, "Avatar File is Required")
     }
+
 
     const avatar= await uploadOnCloudinary(avatarLocalPath)
 
@@ -321,6 +324,16 @@ const updateAvatar = asyncHandler(async(req,res)=>{
     ).select("-password -refreshToken")
     
 
+    const deleteimage= await deleteFilesCloudnary(imageTobeDeleted)
+
+    if(!deleteimage){
+        throw new ApiError(400, "Error while deleting the Avatar")
+    }
+    return res.status(200)
+    .json(
+        new ApiResponse(200, {}, "Avatar successfully Changed!!") 
+    )
+
 })
 
 const updateCoverImage = asyncHandler(async(req,res)=>{
@@ -330,6 +343,8 @@ const updateCoverImage = asyncHandler(async(req,res)=>{
     if(!coverImageLocalPath){
         throw new ApiError(400, "Cover File is Required")
     }
+
+    const imageTobeDeleted = await req.user?.coverImage
 
     const coverImage= await uploadOnCloudinary(coverImageLocalPath)
 
@@ -349,7 +364,18 @@ const updateCoverImage = asyncHandler(async(req,res)=>{
         {new:true}
     ).select("-password -refreshToken")
     
+    
 
+    const deleteimage= await deleteFilesCloudnary(imageTobeDeleted)
+
+    if(!deleteimage){
+        throw new ApiError(400, "Error while deleting the Avatar")
+    }
+
+    return res.status(200)
+    .json(
+        new ApiResponse(200, {}, "CoverImage successfully Changed!!") 
+    )
 })
 
 
