@@ -1,3 +1,5 @@
+//For response we are using express not node and express does not provide
+//classes for response.
 class ApiResponse{
     constructor(statusCode,data, message="Success"){
         this.statusCode = statusCode

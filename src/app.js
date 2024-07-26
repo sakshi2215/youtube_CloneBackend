@@ -4,23 +4,23 @@ import cookieParser from "cookie-parser"
 
 
 const app = express()
-
+//app.use for configuration
 //configuration of CORS
 app.use(cors({
-    origin: process.env.CORS_ORIGIN,
-    credentials: true,
+    origin: process.env.CORS_ORIGIN, //Define cors origin
+    credentials: true, 
 }))
 
-
-app.use(express.json({limit:"16kb"}))
-app.use(express.urlencoded({extended: true, limit:"16kb"}))
-app.use(express.static("public"))
-app.use(cookieParser())
+//Settings for Data Preparation
+app.use(express.json({limit:"16kb"})) //Setting limit for json data
+app.use(express.urlencoded({extended: true, limit:"16kb"})) //extended:nested object we can use
+//Also url is encode so we use urlencoded.
+app.use(express.static("public")) //Public assests for storing file in server
+app.use(cookieParser()) //To access user cookies and perform curd 
 
 
 
 //routes
-
 import userRouter from './routes/user.routes.js'
 
 
