@@ -23,9 +23,6 @@ app.use(cookieParser()) //To access user cookies and perform curd
 //routes
 import userRouter from './routes/user.routes.js'
 
-
-
-
 //routes declaration
 app.use("/api/v1/users", userRouter)
 

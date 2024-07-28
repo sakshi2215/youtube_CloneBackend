@@ -7,10 +7,15 @@ import jwt from "jsonwebtoken"
 
 const generateAcessAndrefreshTokens =  async(userId)=>{
     try{
-        const user = await User.findById(userId)
+        const user = await User.findById(userId).select(
+            "-password"
+        )
+     
+        //console.log(user.refreshToken)
         const refreshToken = user.generateRefreshToken()
         const accessToken = user.generateAccessToken()
         user.refreshToken = refreshToken
+        //console.log(refreshToken)
         await user.save({ validateBeforesave: false })
         return { accessToken, refreshToken }
     }
@@ -20,81 +25,88 @@ const generateAcessAndrefreshTokens =  async(userId)=>{
 }
 
 const registerUser = asyncHandler(async(req, res)=>{
- 
+//LOGIC:-
+   //get user detail from frontend
+   //validation of user - not empty
+   // Check if user already Exists: username , email
+   // Check if all the files are there or not - avatar compulsory
+   //Upload them to cloudnary, avatar
+   //create user Object - Mongo is nosql - create entry in db
+   //remove password and refresh token from response
+   //check for user creation
+   //return response
+
+   //get user detail from frontend
+   const {fullname, email, username, password}= req.body
+   // console.log(req.body)
+   // console.log(req.files)
+   //check if user already exists: username , email
+   const exitedUser = await User.findOne({
+       $or: [{username},{email}]
+   })
+
+   if(exitedUser){
+       throw new ApiError(409, "User With Email or Username already exists")
+   }
+
+
+   //validation- not empty
+   if(
+       [fullname, email, username, password].some((feild)=>{
+           return feild?.trim()===""
+       })
+   ){
+      throw new ApiError(400, "All Feilds are compulsory or required")
+   }
+
    
-    //remove password and refresh token feild from response
-    //check for user creation
-    //return response
+   //check for images
+   //check for avatars
+   const avatarLocalPath = req.files?.avatar[0]?.path;
+   //const coverImageLocalPath = req.files?.coverImage[0]?.path;
 
+   let coverImageLocalPath;
+   if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
+       coverImageLocalPath = req.files.coverImage[0].path
+   }
 
-    //get user detail from frontend
-    const {fullname, email, username, password}= req.body
-    // console.log(req.body)
-    // console.log(req.files)
-    //check if user already exists: username , email
-    const exitedUser = await User.findOne({
-        $or: [{username},{email}]
+   if(!avatarLocalPath){
+       throw new ApiError(400, "Avatar File is Required")
+   }
+
+   //upload to cloudnary , avatar
+   const avatar= await uploadOnCloudinary(avatarLocalPath)
+   const coverImage = await uploadOnCloudinary(coverImageLocalPath)
+   
+   if(!avatar){
+       throw new ApiError(400, "Avatar file is required")
+   }
+
+    //create a user object- create entry in db
+    const user = await User.create({
+       fullname,
+       avatar: avatar.url,
+       coverImage: coverImage?.url || "",
+       email,
+       password,
+       username:username.toLowerCase()
     })
 
-    if(exitedUser){
-        throw new ApiError(409, "User With Email or Username already exists")
-    }
+   const createdUser = await User.findById(user._id).select(
+       "-password -refreshToken"
+   )
 
+   if(!createdUser){
+       throw new ApiError(500, "Something went wrong while registering the user" )
+   }
+   
 
-    //validation- not empty
-    if(
-        [fullname, email, username, password].some((feild)=>{
-            return feild?.trim()===""
-        })
-    ){
-       throw new ApiError(400, "All Feilds are compulsory or required")
-    }
+   return res.status(201).json(
+       new ApiResponse(200,createdUser,"User registered Sucessfully")
+   )
+   
 
     
-    //check for images
-    //check for avatars
-    const avatarLocalPath = req.files?.avatar[0]?.path;
-    //const coverImageLocalPath = req.files?.coverImage[0]?.path;
-
-    let coverImageLocalPath;
-    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
-        coverImageLocalPath = req.files.coverImage[0].path
-    }
-
-    if(!avatarLocalPath){
-        throw new ApiError(400, "Avatar File is Required")
-    }
-
-    //upload to cloudnary , avatar
-    const avatar= await uploadOnCloudinary(avatarLocalPath)
-    const coverImage = await uploadOnCloudinary(coverImageLocalPath)
-    
-    if(!avatar){
-        throw new ApiError(400, "Avatar file is required")
-    }
-
-     //create a user object- create entry in db
-     const user = await User.create({
-        fullname,
-        avatar: avatar.url,
-        coverImage: coverImage?.url || "",
-        email,
-        password,
-        username:username.toLowerCase()
-     })
-
-    const createdUser = await User.findById(user._id).select(
-        "-password -refreshToken"
-    )
-
-    if(!createdUser){
-        throw new ApiError(500, "Something went wrong while registering the user" )
-    }
-    
-
-    return res.status(201).json(
-        new ApiResponse(200,createdUser,"User registered Sucessfully")
-    )
 })
 
 
@@ -107,19 +119,22 @@ const loginUser = asyncHandler(async(req,res)=>{
     //send cookies- Secure Cookies
 
     const{email, username, password} = req.body
-
+    
+    //If the username or email feild is empty
     if(!(username || email)){
         throw new ApiError(400, "Username or Password is required")
     }
-
+    
+    //Find if the username or email already exists
     const user = await User.findOne({
         $or: [{username},{email}]
     })
-
+    
     if(!user){
         throw new ApiError(404, "User does not exists")
     }
-
+    
+    //Check Password             //NOT User
     const isPasswordValid= await user.isPasswordCorrect(password)
 
     if(!isPasswordValid){
@@ -128,14 +143,14 @@ const loginUser = asyncHandler(async(req,res)=>{
     
     const{accessToken, refreshToken}= await generateAcessAndrefreshTokens(user._id)
 
-
+    //User with updated refeshToken
     const loggedInUser= await User.findById(user._id).select(
         "-password -refreshToken"
     )
-
+   
     const options = {
         httpOnly: true,
-        secure: true
+        secure: true // Cookies can be modified only be server
     }
 
     return res
@@ -147,7 +162,7 @@ const loginUser = asyncHandler(async(req,res)=>{
     .json(
         new ApiResponse(
             200,
-            {
+            {  //Sometimes mobile app does not have access to the Cookies.
                 user: loggedInUser, accessToken, refreshToken
             },
             "User logged In Successfully"
