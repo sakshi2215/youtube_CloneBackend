@@ -195,7 +195,7 @@ return res
 .json(new ApiResponse(200, {}, "User Logged Out"))
 })
 
-const refreshAcessToken = asyncHandler(async(req,res)=>{
+const refreshAccessToken = asyncHandler(async(req,res)=>{
     
 
     try{
@@ -233,7 +233,7 @@ const refreshAcessToken = asyncHandler(async(req,res)=>{
     .cookie("refreshToken", newrefreshToken, options)
     .json(
         new ApiResponse(200, {accessToken, refreshToken : newrefreshToken},
-            "Acess Tokenrefreshed"
+            "Acess Token Refreshed"
         )
     )
     }
@@ -394,7 +394,6 @@ const updateCoverImage = asyncHandler(async(req,res)=>{
 })
 
 
-
 const getuserChannelProfile = asyncHandler(async(req,res)=>{
    const{username}=  req.params
    if(!username?.trim()){
@@ -522,7 +521,7 @@ const getWatchHistory = asyncHandler(async(req, res)=>{
 export {registerUser,
      loginUser,
      logoutUser,
-     refreshAcessToken,
+     refreshAccessToken,
      changeCurrentPassword,
      getCurrentUser,
      updateAccountDetails,
