@@ -46,7 +46,7 @@ router.route("/update-account").patch(verifyJWT, updateAccountDetails)
 
 router.route("/current-user").get(verifyJWT, getCurrentUser)
 
-router.route("/channel-profile").get(verifyJWT, getuserChannelProfile)
+router.route("/c/:username").get(verifyJWT, getuserChannelProfile)
 
 router.route("/watch-history").get(verifyJWT, getWatchHistory)
 
