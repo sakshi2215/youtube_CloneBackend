@@ -48,7 +48,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
 
     const thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
     if(!thumbnail) throw new ApiError(500, "Error while Uploading Thumbnail File");
-
+    
+    //Create video in database
     const videoUpload= await Video.create({
         title,
         videofile: videoFile.url,
@@ -59,8 +60,9 @@ const publishAVideo = asyncHandler(async (req, res) => {
     })
     if(!videoUpload) throw new ApiError(500, "Error while uploading video")
     
-    console.log(videoUpload)
-
+    // console.log(videoUpload)
+    
+    //send response
     return res
     .status(200)
     .json(new ApiResponse(200,  videoUpload, "Video uploaded successfully"))
