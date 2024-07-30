@@ -27,12 +27,12 @@ const publishAVideo = asyncHandler(async (req, res) => {
     if(!videoLocalPath) throw new ApiError(400, "Video file is required")
     
     // //Check the file type of video
-    // const videoFileType = req.files?.videoFile[0]?.mimetype;
+    const videoFileType = req.files?.videoFile[0]?.mimetype;
 
-    // if(!(videoFileType === "video/mp4" || videoFileType==="video/webm" 
-    //     || videoFileType==="video/x-m4v" )){
-    //         throw new ApiError(400, "Only video files are allowed")
-    //     }
+    if(!(videoFileType === "video/mp4" || videoFileType==="video/webm" 
+        || videoFileType==="video/x-m4v" )){
+            throw new ApiError(400, "Only video files are allowed")
+        }
     
 
     //Fetch the local file path for thumbnail
