@@ -4,7 +4,7 @@ import {User} from "../models/users.models.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
-import {uploadOnCloudinary} from "../utils/FileUploadAndDelete.js"
+import {uploadOnCloudinary, deleteFilesCloudnary} from "../utils/FileUploadAndDelete.js"
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
@@ -61,7 +61,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
     if(!videoUpload) throw new ApiError(500, "Error while uploading video")
     
     // console.log(videoUpload)
-    
+
     //send response
     return res
     .status(200)
@@ -72,17 +72,66 @@ const publishAVideo = asyncHandler(async (req, res) => {
 const getVideoById = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     //TODO: get video by id
+    // 
 })
 
+//TODO: update video details like title, description, thumbnail
 const updateVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
-    //TODO: update video details like title, description, thumbnail
+    
+    //Check if video exists or not
+    if(!isValidObjectId(videoId)) throw new ApiError(400, "Invalid Video Id")
+    
+    //Get title and description from the user
+    const { title, description} = req.body
+    
 
+    //Check if title is there or not, title is required
+    if(!title) throw new ApiError(400, "Title is required")
+    
+    //check if description is there or not
+    if(!description) throw new ApiError(400, "Description is required")
+        
+    //Get thumbnail Local Path
+    let thumbnailLocalPath;
+    if(req.file && Array.isArray(req.file.thumbnail) && req.file.thumbnail.length >0){
+        thumbnailLocalPath = req.file.thumbnail[0].path;
+    }
+    let thumbnail;
+    if(thumbnailLocalPath){
+        //Delete the old thumnail from cloudinary and upload the new One
+        const video = await Video.findById(videoId);
+        if(!video) throw new ApiError(404, "Video not found");
+        const oldThumbnailUrl = video.thumbnail;
+
+        if(!oldThumbnailUrl) throw new ApiError(400, "Thumbnail is not in Database!!!")
+        const deleteResponse = await deleteFilesCloudnary(oldThumbnailUrl);
+        if(!deleteResponse) throw new ApiError(500, "Error while deleting old thumbnail")
+        thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
+        if(!thumbnail) throw new ApiError(500, "Error while Uploading Thumbnail File");
+        }
+    
+    const video = await Video.findByIdAndUpdate(
+        videoId,
+        {
+            title,
+            description,
+            thumbnail: thumbnail ? thumbnail.url : video.thumbnail
+        },
+        {new: true}
+    )
+    if(!video){
+        throw new ApiError(400, "Something Went Wrong after Updating the Video");
+    }
+    return res
+    .status(200)
+    .json( new ApiResponse(200, video, "Video Succesfully Updated"));
 })
 
+//TODO: delete video
 const deleteVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
-    //TODO: delete video
+    
 })
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
