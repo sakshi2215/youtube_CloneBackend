@@ -1,10 +1,14 @@
 import mongoose, {isValidObjectId} from "mongoose"
 import {Video} from "../models/video.models.js"
 import {User} from "../models/users.models.js"
+import {Comment} from "../models/comment.models.js"
 import {ApiError} from "../utils/ApiError.js"
+import {Like} from "../models/like.models.js"
+import { Playlist } from "../models/playlist.models.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import {uploadOnCloudinary, deleteFilesCloudnary} from "../utils/FileUploadAndDelete.js"
+
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
@@ -12,10 +16,10 @@ const getAllVideos = asyncHandler(async (req, res) => {
     //TODO: get all videos based on query, sort, pagination
 })
 
+// TODO- DONE: get video, upload to cloudinary, create video
 const publishAVideo = asyncHandler(async (req, res) => {
     const { title, description} = req.body
-    
-    // TODO: get video, upload to cloudinary, create video
+
 
     //Check if title is there or not, title is required
     if(!title) throw new ApiError(400, "Title is required")
@@ -75,7 +79,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     // 
 })
 
-//TODO: update video details like title, description, thumbnail
+//TODO- DONE: update video details like title, description, thumbnail
 const updateVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     
@@ -131,7 +135,56 @@ const updateVideo = asyncHandler(async (req, res) => {
 //TODO: delete video
 const deleteVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
+    if(!isValidObjectId(videoId)) throw new ApiError("Invalid VideoId");
     
+    //deleted the video 
+    const videodetail = await Video.findByIdAndDelete(videoId);
+    if(!videodetail) throw new ApiError("Video Not Found");
+    
+    //deletes the video thumbnail
+    const thumbnailurl = videodetail.thumbnail;
+    await deleteFilesCloudnary(thumbnailurl);
+    
+    //Delete from cloudnary
+    const videoFile = videodetail.videofile;
+    await deleteFilesCloudnary(videoFile);
+    
+    //To Do deleting the video likes
+    const deleteVideoLikes = await Like.deleteMany({
+        video: mongoose.Types.ObjectId(videoId),
+    })
+    
+    //Deleting the comments
+    const deleteComment = await Comment.deleteMany({
+        video:mongoose.Types.ObjectId(videoId)
+    })
+
+    //Deleting the likes associated with comments
+    //1. Find all comments related to video
+    const videoComment = await Comment.find({
+        video: mongoose.Types.ObjectId(videoId)
+    })
+    //2. Extract the comment ids
+    const commentID = videoComment.map(comment => comment._id)
+    //3. Delete all the likes associated with comment id array
+    const deleteCommentLike = await Like.deleteMany({
+        comment: {
+            $in: commentID
+        }
+    })
+
+    const deleteVideoFromPlaylist = await Playlist.updateMany({
+        videos: mongoose.Types.ObjectId(videoId)
+    },{
+        $pull :{ videos : mongoose.Types.ObjectId(videoId)}
+    })
+    
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, [], "Video Deleted Successfully!!!")
+    )
+
 })
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
