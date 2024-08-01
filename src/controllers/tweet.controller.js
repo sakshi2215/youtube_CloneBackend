@@ -5,8 +5,9 @@ import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 
+//TODO Done: create tweet
 const createTweet = asyncHandler(async (req, res) => {
-    //TODO: create tweet
+   
     const {content} = req.body;
     if(!content){
         throw new ApiError(400, "Invalid Tweet");

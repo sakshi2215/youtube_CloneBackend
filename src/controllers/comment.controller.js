@@ -11,9 +11,9 @@ const getVideoComments = asyncHandler(async (req, res) => {
     const {page = 1, limit = 10} = req.query
 
 })
-
+// TODO Done: add a comment to a video
 const addComment = asyncHandler(async (req, res) => {
-    // TODO: add a comment to a video
+    
     const {videoId} = req.params
     const {comment} = req.body
     
@@ -52,8 +52,9 @@ const addComment = asyncHandler(async (req, res) => {
     .json( new ApiResponse(200, commentData, "Successfully Posted the Comments!!!"))
 })
 
+// TODO Done: update a comment
 const updateComment = asyncHandler(async (req, res) => {
-    // TODO: update a comment
+    
     const {commentId} = req.params;
     const{content} = req.body;
 
@@ -82,9 +83,9 @@ const updateComment = asyncHandler(async (req, res) => {
     .json( new ApiResponse( 200, comment, "Successfully Updated the Comment"));
 
 })
-
+// TODO Done: delete a comment
 const deleteComment = asyncHandler(async (req, res) => {
-    // TODO: delete a comment
+    
     const {commentId} = req.params;
     if(!isValidObjectId(commentId)){
         throw new ApiError(400, "Invalid comment Id");
