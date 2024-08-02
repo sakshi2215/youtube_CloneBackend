@@ -14,6 +14,15 @@ import {uploadOnCloudinary, deleteFilesCloudnary} from "../utils/FileUploadAndDe
 const getAllVideos = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
     //TODO: get all videos based on query, sort, pagination
+    if(!query){
+        throw new ApiError(400,"Query Must be Provided");
+    }
+    if(!isValidObjectId(userId)){
+        throw new ApiError(400, "User Id is Invalid");
+    }
+    const videos = await Video.aggregate([
+        {}
+    ])
 })
 
 // TODO- DONE: get video, upload to cloudinary, create video

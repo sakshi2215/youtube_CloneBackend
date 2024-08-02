@@ -124,14 +124,14 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid user Id");
     }
 
-    //check if the user can liked the comment or not
+    //check if the user can liked the tweet or not
     const existingLike = await Like.findOne({
         tweet: tweetId,
         likedby: commentId,
     })
 
     if(existingLike){
-        //Proceed With unliking the comments
+        //Proceed With unliking the tweet
         await Like.deleteOne(
             {
                 _id: existingLike._id
