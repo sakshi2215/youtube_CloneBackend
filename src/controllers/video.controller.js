@@ -8,8 +8,8 @@ import { Playlist } from "../models/playlist.models.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import {uploadOnCloudinary, deleteFilesCloudnary} from "../utils/FileUploadAndDelete.js"
-
-
+import {getVideoComments}from "./comment.controllers.js"
+import {getVideoLikes} from "./like.controller.js"
 
 const getAllVideos = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
@@ -82,10 +82,32 @@ const publishAVideo = asyncHandler(async (req, res) => {
     
 })
 
+ //TODO: get video by id
 const getVideoById = asyncHandler(async (req, res) => {
     const { videoId } = req.params
-    //TODO: get video by id
-    // 
+    if(!isValidObjectId(videoId)){
+        throw new ApiError(400, "Invalid Video Id");
+    }
+
+    const video = await Video.findById(videoId);
+    if(!video){
+        throw new ApiError(400, "Could not find the video");
+    }
+    //get comment related to video from comment controller
+    const comments = await getVideoComments(videoId);
+    //get likes related to video from likes contrller
+    const likes = await getVideoLikes(videoId);
+    
+    const videoData = {
+        ...video.toObject(),
+      comments,
+      likes,
+    };
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, videoData, "Successfully get video by id")
+    )
 })
 
 //TODO- DONE: update video details like title, description, thumbnail
@@ -196,8 +218,33 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
 })
 
+
+// change whether a video is publicly accessible or not
 const togglePublishStatus = asyncHandler(async (req, res) => {
     const { videoId } = req.params
+    if(!isValidObjectId(videoId)){
+        throw new ApiError(400, "Invalid video Id")
+    }
+
+    //find the video with video- id mentioned
+    const video = await Video.findById(videoId);
+    if(!video){
+        throw new ApiError(400, "Could not find the video");
+    }
+    video.isPublished = !video.isPublished;
+    await video.save();
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, video, "Successfully updated the Publish Status" )
+    );
+    // const changePublishStatus = await Video.findByIdAndUpdate(videoId,{
+    //     isPublished: !i
+    // })
+    
+
+    
 })
 
 export {

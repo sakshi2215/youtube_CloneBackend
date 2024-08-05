@@ -170,9 +170,14 @@ const getLikedVideos = asyncHandler(async (req, res) => {
     //TODO: get all liked videos
 })
 
+ //TODo: get likes associated with video
+const  getVideoLikes = asyncHandler(async(req,res)=>{
+   const {videoId} = req.params;
+})
 export {
     toggleCommentLike,
     toggleTweetLike,
     toggleVideoLike,
-    getLikedVideos
+    getLikedVideos,
+    getVideoLikes
 }
