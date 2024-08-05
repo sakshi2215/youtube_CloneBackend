@@ -11,18 +11,125 @@ import {uploadOnCloudinary, deleteFilesCloudnary} from "../utils/FileUploadAndDe
 import {getVideoComments}from "./comment.controllers.js"
 import {getVideoLikes} from "./like.controller.js"
 
+//TODO Done: get all videos based on query, sort, pagination
 const getAllVideos = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
-    //TODO: get all videos based on query, sort, pagination
-    if(!query){
-        throw new ApiError(400,"Query Must be Provided");
+    const {searchAfterValue, searchBeforeValue} = req.params
+    
+    query = query.trim();
+    if(!sortBy){
+        sortBy = "views"
     }
+    const pagenumber = parseInt(page,10);
+    const pageSize = parseInt(limit, 10);
+    const sortOrder = sortType==="desc"?-1 :1;
+    const isFirstQuery = !searchAfterValue && !searchBeforeValue; // Check if it's the first query
+    const isForwardPagination = searchAfterValue; // Check if pagination is forward
+    const isBackwardPagination = searchBeforeValue;
     if(!isValidObjectId(userId)){
         throw new ApiError(400, "User Id is Invalid");
     }
-    const videos = await Video.aggregate([
-        {}
-    ])
+    // const videos = await Video.aggregate([
+    //     {}
+    // ])
+
+    let pipeline = [
+        {
+            $match:{
+                isPublished: true,
+            }
+        },
+
+    ]
+    //if the user has provided the query then only will be search stage and pagination token will be generated
+    //Ref - https://www.mongodb.com/docs/atlas/atlas-search/tutorial/divide-results-tutorial/
+    if (query) {
+        let searchStage = {
+            $search: {
+                "index": "query_search",
+                "text": {
+                    "path": "title",
+                    "query": query
+                },
+                "sort": sortBy ? { [sortBy]: 1 } : { "views": 1 } 
+            }
+        };
+    
+        if (isForwardPagination) {
+            searchStage.$search.searchAfter = [searchAfterValue];
+        }
+    
+        if (isBackwardPagination) {
+            searchStage.$search.searchBefore = [searchBeforeValue];
+            searchStage.$search.sort = sortBy ? { [sortBy]: -1 } : { "views": -1 }; // Reverse sorting for backward pagination
+        }
+    
+        pipeline.push(searchStage);
+    }
+    
+    //if no query provided then use sort
+    if (!query) {
+        pipeline.push({
+            "$sort": {
+                [sortBy || 'views']: sortOrder
+            }
+        });
+    }
+    //adding user details lookup for creator 
+    pipeline.push({
+        $lookup:{
+            from :"users",
+            localField: "owner",
+            foreignField: "_id",
+            as: "creator",
+
+            pipeline: [
+                {
+                    $project:{
+                        username:1,
+                        fullname:1,
+                        avatar:1,
+
+                    },
+                },
+            ],
+        },
+        
+    });
+    //adding pagiation stage for limit
+    pipeline.push(
+       {
+            "$limit" : pageSize,
+        }
+    );
+
+    //adding projection stage
+    pipeline.push({
+        "$project":{
+        _id: 1, 
+        videofile: 1, // Include the videofile field
+        thumbnail: 1, // Include the thumbnail field
+        title: 1, // Include the title field
+        description: 1, // Include the description field
+        duration: 1, // Include the duration field
+        views: 1, // Include the views field
+        isPublished: 1, // Include the isPublished field
+        owner: 1, // Include the owner field
+        creater :1,
+        ...(query ? { 
+            paginationToken: { $meta: "searchSequenceToken" },
+            score: { $meta: "searchScore" }
+        } : {})
+        }
+    })
+
+    const allVideos = await Video.aggregate(pipeline);
+    if(!allVideos){
+        throw new ApiError(500, "Something went wrong while fetching the videos");
+    }
+    return res
+    .status(200)
+    .json(new ApiResponse(200, allVideos, "All videos sent successfully"));
 })
 
 // TODO- DONE: get video, upload to cloudinary, create video
