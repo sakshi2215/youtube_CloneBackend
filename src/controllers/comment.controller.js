@@ -5,7 +5,7 @@ import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 
-//TODO Done : get all comments for a video
+//TODO Done : get all comments associated with a video
 const getVideoComments = asyncHandler(async (req, res) => {
     
     const {videoId} = req.params
@@ -23,7 +23,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
                 video: mongoose.Types.ObjectId(videoId),
             }
         },
-        {
+        {   //likes associated with comments
             $lookup:
             {
                 from:"likes",
@@ -45,19 +45,27 @@ const getVideoComments = asyncHandler(async (req, res) => {
                 localField: "owner", //field in the comments collection that references the user is called "owner"
                 foreignField: "_id",
                 as: "user_details",
+                pipeline:[
+                    {
+                        $project:{
+                            fullname: 1,
+                            avatar: 1,
+                            username: 1
+                        }
+                    },
+                ]
             }
         },
         {
-            $unwind: "$user_details",
+            $addFields: {
+                details: {
+                    $first: "$user_details"
+                }
+            }
         },
         {
             $project: {
                 comment_likes: 0, // excluding the `comment_likes` from the final result
-                "user_details.email" :0,
-                "user_details.coverImage" : 0,
-                "user_details.password":0,
-                "user_details.watchHistory": 0,
-                "user_details.refreshToken": 0,
 
             }
         },
