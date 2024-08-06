@@ -47,8 +47,49 @@ const createTweet = asyncHandler(async (req, res) => {
     );
 })
 
+  // TODO: get user tweets  
 const getUserTweets = asyncHandler(async (req, res) => {
-    // TODO: get user tweets  
+    const {userId} = req.params;
+    if(!isValidObjectId(userId)){
+        throw new ApiError(400, "Invalid User Id");
+    }
+
+    const userTweet = await Tweet.aggregate([
+        {
+            $match:{
+                owner : mongoose.Types.ObjectId(userId),
+            }
+        },
+        {
+            $lookup: {
+                from: 'likes',
+                localField: '_id',
+                foreignField: 'tweet',
+                as: 'likes'
+            }
+        },
+        {
+            $addFields: {
+                likeCount: { $size: '$likes' }
+            }
+        },
+        {
+            $project: {
+                _id: 1,
+                likeCount: 1
+            }
+        }
+    ])
+
+    if(!userTweet){
+        throw new ApiError(500, "Could not fetch tweet associated with user");
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, userTweet, "Successfully fetched user Tweet along with likes count!!!")
+    );
 })
 
 //TODO Done: update tweet
