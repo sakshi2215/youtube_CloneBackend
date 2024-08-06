@@ -5,10 +5,79 @@ import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 
+//TODO Done : get all comments for a video
 const getVideoComments = asyncHandler(async (req, res) => {
-    //TODO: get all comments for a video
+    
     const {videoId} = req.params
-    const {page = 1, limit = 10} = req.queryp
+    const {page = 1, limit = 10} = req.query
+
+    if(!isValidObjectId(videoId)){
+        throw new ApiError(400, "Invalid videoId");
+    }
+    const pageNumber = parseInt(page, 10);
+    const limitSize = parseInt(limit, 10);
+
+    const getComments = await Comment.aggregate([
+        {
+            $match : {
+                video: mongoose.Types.ObjectId(videoId),
+            }
+        },
+        {
+            $lookup:
+            {
+                from:"likes",
+                localField: "_id",
+                foreignField: "comment",
+                as: "comment_likes",
+            }
+        },
+        {
+            $addFields: {
+                likesCount: { 
+                    $size: "$comment_likes",
+                }
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "owner", //field in the comments collection that references the user is called "owner"
+                foreignField: "_id",
+                as: "user_details",
+            }
+        },
+        {
+            $unwind: "$user_details",
+        },
+        {
+            $project: {
+                comment_likes: 0, // excluding the `comment_likes` from the final result
+                "user_details.email" :0,
+                "user_details.coverImage" : 0,
+                "user_details.password":0,
+                "user_details.watchHistory": 0,
+                "user_details.refreshToken": 0,
+
+            }
+        },
+        {
+            $skip: (pageNumber - 1) * limitSize,
+        },
+        {
+            $limit: limitSize,
+        }
+    ])
+
+    if(!getComments){
+        throw new ApiError(500, "Something went wrong while fetching comments from db");
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, getComments, "Successfully fetched comments")
+    );
 
 })
 // TODO Done: add a comment to a video

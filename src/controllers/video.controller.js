@@ -326,7 +326,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
 })
 
 
-// change whether a video is publicly accessible or not
+// TODO Done: change whether a video is publicly accessible or not
 const togglePublishStatus = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     if(!isValidObjectId(videoId)){
