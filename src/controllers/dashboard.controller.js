@@ -15,6 +15,12 @@ const getChannelStats = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid channel Id!");
     }
 
+    //check if comment exists or not
+    const isChannel = await User.findById(channelId);
+    if(!isChannel){
+        throw new ApiError(400, "Channel does not exists");
+    }
+
     const channelStats = await User.aggregate([
         {
             $match:{
@@ -147,6 +153,11 @@ const getChannelVideos = asyncHandler(async (req, res) => {
     const {channelId} = req.params;
     if(!isValidObjectId(channelId)){
         throw new ApiError(400, "invalid channel Id");
+    }
+    //check if comment exists or not
+    const ischannel = await User.findById(channelId);
+    if(!ischannel){
+        throw new ApiError(400, "Channel does not exists");
     }
 
     const getVideo = await Video.aggregate([

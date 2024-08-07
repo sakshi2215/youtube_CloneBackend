@@ -4,7 +4,7 @@ import {Like} from "../models/like.models.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
-
+import {Video} from "../models/video.models.js"
 //TODO Done : get all comments associated with a video
 const getVideoComments = asyncHandler(async (req, res) => {
     
@@ -13,6 +13,11 @@ const getVideoComments = asyncHandler(async (req, res) => {
 
     if(!isValidObjectId(videoId)){
         throw new ApiError(400, "Invalid videoId");
+    }
+    //check if video exists or not
+    const video = await Video.findById(videoId);
+    if(!video){
+        throw new ApiError(400, "Video does not exists");
     }
     const pageNumber = parseInt(page, 10);
     const limitSize = parseInt(limit, 10);
@@ -96,6 +101,12 @@ const addComment = asyncHandler(async (req, res) => {
     
     //check if valid videoid
     if(!isValidObjectId(videoId)) throw new ApiError(400, "Invaild videoId");
+    
+    //check if video exists or not
+    const video = await Video.findById(videoId);
+    if(!video){
+        throw new ApiError(400, "video does not exists");
+    }
 
     //check if comment is not empty
     if(!comment) throw new ApiError(400, "Empty comment not Allowed");
@@ -138,6 +149,11 @@ const updateComment = asyncHandler(async (req, res) => {
     if(!isValidObjectId(commentId)){
         throw new ApiError(400,"Invalid Comment Id");
     }
+    //check if comment exists or not
+    const iscomment = await Comment.findById(commentId);
+    if(!iscomment){
+        throw new ApiError(400, "Comment does not exists");
+    }
 
     if(!content){
         throw new ApiError(400, "Content Can not be Empty");
@@ -167,6 +183,13 @@ const deleteComment = asyncHandler(async (req, res) => {
     if(!isValidObjectId(commentId)){
         throw new ApiError(400, "Invalid comment Id");
     }
+
+    //check if comment exists or not
+    const iscomment = await Comment.findById(commentId);
+    if(!iscomment){
+        throw new ApiError(400, "Comment does not exists");
+    }
+    
     const deleteComment = await Comment.findByIdAndDelete(commentId);
 
     if(!deleteComment){
