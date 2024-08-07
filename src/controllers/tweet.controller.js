@@ -49,7 +49,7 @@ const createTweet = asyncHandler(async (req, res) => {
 
 // TODO Done: get user tweets  
 const getUserTweets = asyncHandler(async (req, res) => {
-    const {userId} = req.params;
+    const {userId} = req.user?._id;
     if(!isValidObjectId(userId)){
         throw new ApiError(400, "Invalid User Id");
     }
@@ -101,6 +101,12 @@ const updateTweet = asyncHandler(async (req, res) => {
     if(!isValidObjectId(tweetId)){
         throw new ApiError(400, "Invalid tweet Id");
     }
+    
+     //check if Tweet exists or not
+     const istweet = await Tweet.findById(tweetId);
+     if(!istweet){
+         throw new ApiError(400, "Tweet does not exists");
+     }
 
     if(!content){
         throw new ApiError(400, "Content must be Provided");
@@ -131,10 +137,16 @@ const deleteTweet = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Tweet Id is Invalid");
     }
 
+    //check if Tweet exists or not
+    const istweet = await Tweet.findById(tweetid);
+    if(!istweet){
+        throw new ApiError(400, "Tweet does not exists");
+    }
+
     const deleteTweet = await Tweet.findAndDelete(tweetid);
 
     if(!deleteTweet){
-        throw new ApiError(500, "Error while deteing the Tweet");
+        throw new ApiError(500, "Error while deleting the Tweet");
     }
 
     const deleteTweetLike = await Like.deleteMany({
