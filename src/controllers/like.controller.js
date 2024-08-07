@@ -166,7 +166,7 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 }
 )
 
- //TODo: get likes associated with video
+ //TODO Done: get likes associated with video
 const  getVideoLikes = asyncHandler(async(req,res)=>{
    const {videoId} = req.params;
    if(!isValidObjectId(videoId)){
