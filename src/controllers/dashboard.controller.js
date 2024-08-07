@@ -154,7 +154,7 @@ const getChannelVideos = asyncHandler(async (req, res) => {
     if(!isValidObjectId(channelId)){
         throw new ApiError(400, "invalid channel Id");
     }
-    //check if comment exists or not
+    //check if channel exists or not
     const ischannel = await User.findById(channelId);
     if(!ischannel){
         throw new ApiError(400, "Channel does not exists");

@@ -224,6 +224,13 @@ const updateVideo = asyncHandler(async (req, res) => {
     //Check if video exists or not
     if(!isValidObjectId(videoId)) throw new ApiError(400, "Invalid Video Id")
     
+
+    //check if video exists or not
+    const isvideo = await Video.findById(videoId);
+    if(!isvideo){
+        throw new ApiError(400, "Video does not exists");
+    }
+
     //Get title and description from the user
     const { title, description} = req.body
     
@@ -274,6 +281,12 @@ const updateVideo = asyncHandler(async (req, res) => {
 const deleteVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     if(!isValidObjectId(videoId)) throw new ApiError("Invalid VideoId");
+    
+    //check if video exists or not
+    const video = await Video.findById(videoId);
+    if(!video){
+        throw new ApiError(400, "Video does not exists");
+    }
     
     //deleted the video 
     const videodetail = await Video.findByIdAndDelete(videoId);

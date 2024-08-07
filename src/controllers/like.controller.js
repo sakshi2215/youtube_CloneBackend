@@ -3,13 +3,21 @@ import {Like} from "../models/like.model.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
-
+import {Video} from "../models/video.models.js"
+import { Comment } from "../models/comment.models.js"
+import { Like } from "../models/like.models.js"
 //TODO Done: toggle like on video
 const toggleVideoLike = asyncHandler(async (req, res) => {
     const {videoId} = req.params
     const{userId} = req.user?._id;
     if(!isValidObjectId(videoId)){
         throw new ApiError(400,"Invalid Video Id");
+    }
+    
+    //check if video exists or not
+    const video = await Video.findById(videoId);
+    if(!video){
+        throw new ApiError(400, "Video does not exists");
     }
 
     if(!isValidObjectId(userId)){
@@ -64,6 +72,12 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     if(!isValidObjectId(commentId)){
         throw new ApiError(400,"Invalid Comment Id");
     }
+    //check if comment exists or not
+    const iscomment = await Comment.findById(commentId);
+    if(!iscomment){
+        throw new ApiError(400, "Comment does not exists");
+    }
+
     if(!userId){
         throw new ApiError(400, "Invalid user Id");
     }
@@ -120,6 +134,13 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
     if(!isValidObjectId(tweetId)){
         throw new ApiError(400,"Invalid Comment Id");
     }
+
+    //check if tweet exists or not
+    const istweet = await Tweet.findById(tweetId);
+    if(!istweet){
+        throw new ApiError(400, "Tweet does not exists");
+    }
+
     if(!userId){
         throw new ApiError(400, "Invalid user Id");
     }
@@ -127,7 +148,7 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
     //check if the user can liked the tweet or not
     const existingLike = await Like.findOne({
         tweet: tweetId,
-        likedby: commentId,
+        likedby: userId,
     })
 
     if(existingLike){
@@ -147,7 +168,7 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
             throw new ApiError(500, "Error While Updating the Likes");
         }
     }
-    //count the total likes a comment has
+    //count the total litweet has
     const likeCount = await Like.countDocuments({
         tweet: tweetId,
     });
@@ -172,6 +193,13 @@ const  getVideoLikes = asyncHandler(async(req,res)=>{
    if(!isValidObjectId(videoId)){
     throw new ApiError(400, "Invalid videoId");
    }
+
+   //check if video exists or not
+   const video = await Video.findById(videoId);
+   if(!video){
+       throw new ApiError(400, "Video does not exists");
+   }
+   
    const getlikes= await Like.aggregate([
     {
         $match:{
