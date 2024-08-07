@@ -7,8 +7,9 @@ import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import {User} from "../models/users.models.js"
 
+// TODO Done: Get the channel stats like total video views, total subscribers, total videos, total likes etc.
 const getChannelStats = asyncHandler(async (req, res) => {
-    // TODO: Get the channel stats like total video views, total subscribers, total videos, total likes etc.
+    
     const {channelId} = req.params;
     if(!isValidObjectId(channelId)){
         throw new ApiError(400, "Invalid channel Id!");
@@ -131,6 +132,14 @@ const getChannelStats = asyncHandler(async (req, res) => {
     
         
     ])
+    if(!channelStats){
+        throw new ApiError(500, "Error while fetching the channel details")
+    }
+    return res
+    .status(200)
+    .json(
+        new ApiResponse( 200, channelStats, "Successfully fetched the channel Dashboard!!")
+    );
 })
 
 const getChannelVideos = asyncHandler(async (req, res) => {
