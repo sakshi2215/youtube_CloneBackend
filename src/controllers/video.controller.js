@@ -20,7 +20,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
     if(!sortBy){
         sortBy = "views"
     }
-    const pagenumber = parseInt(page,10);
+    //const pagenumber = parseInt(page,10);
     const pageSize = parseInt(limit, 10);
     const sortOrder = sortType==="desc"?-1 :1;
     const isFirstQuery = !searchAfterValue && !searchBeforeValue; // Check if it's the first query
@@ -315,7 +315,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
     const videoComment = await Comment.find({
         video: mongoose.Types.ObjectId(videoId)
     })
-    //2. Extract the comment ids
+    //2. Extract the comment ids "hehe enumeration function- Check notes"
     const commentID = videoComment.map(comment => comment._id)
     //3. Delete all the likes associated with comment id array
     const deleteCommentLike = await Like.deleteMany({

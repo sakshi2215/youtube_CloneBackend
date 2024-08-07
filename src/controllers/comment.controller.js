@@ -47,7 +47,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
         {
             $lookup: {
                 from: "users",
-                localField: "owner", //field in the comments collection that references the user is called "owner"
+                localField: "owner", 
                 foreignField: "_id",
                 as: "user_details",
                 pipeline:[
