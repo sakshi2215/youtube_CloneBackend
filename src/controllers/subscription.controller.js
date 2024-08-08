@@ -1,6 +1,6 @@
 import mongoose, {isValidObjectId} from "mongoose"
-import {User} from "../models/user.model.js"
-import { Subscription } from "../models/subscription.model.js"
+import {User} from "../models/users.models.js"
+import {Subcription} from "../models/subscriptions.models.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
@@ -24,13 +24,13 @@ const toggleSubscription = asyncHandler(async (req, res) => {
     }
 
     //Check if the user has already Subscribed the channel
-    const existingSubscribed = await Subscription.findOne({
+    const existingSubscribed = await Subcription.findOne({
         subscriber: userId,
         channel: channelId,
     })
     if(existingSubscribed){
         //Proceed with unliking the post
-        await Subscription.deleteOne({
+        await Subcription.deleteOne({
             _id: existingSubscribed._id,
         })
         return res
@@ -40,7 +40,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
             )
     }
     else{
-        const createSubscribe = await Subscription.create({
+        const createSubscribe = await Subcription.create({
             subscriber: userId,
             channel: channelId,
         })
@@ -69,7 +69,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Channel does not exists");
     }
 
-    const subscribers = await Subscription.aggregate([
+    const subscribers = await Subcription.aggregate([
         {
            $match: {
             channel: mongoose.Types.ObjectId(channelId)
@@ -126,7 +126,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Subscriber does not exist");
     }
      // Aggregate to get channels the subscriber is subscribed to
-     const subscribedChannels = await Subscription.aggregate([
+     const subscribedChannels = await Subcription.aggregate([
         {
             $match: {
                 subscriber: mongoose.Types.ObjectId(subscriberId),
