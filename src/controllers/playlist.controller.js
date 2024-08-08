@@ -37,6 +37,44 @@ const createPlaylist = asyncHandler(async (req, res) => {
 //TODO: get user playlists
 const getUserPlaylists = asyncHandler(async (req, res) => {
     const {userId} = req.params
+    if(!isValidObjectId(userId)) {
+      throw new ApiError(400, "Invalid userID")
+  }
+
+  const playlists = await Playlist.aggregate([
+      {
+          $match: {
+              owner: new mongoose.Types.ObjectId(`${userId}`)
+          }
+      },
+          {
+          $lookup: {
+              from: "videos",
+              localField: "videos",
+              foreignField: "_id",
+              as: "VideoDetails",
+              pipeline: [
+                  {
+                      $project: {
+                          thumbnail: 1,
+                          title:1,
+                          views:1,
+                      }
+                  }
+              ]
+          }
+      },
+  ])
+  
+  return res
+  .status(200)
+  .json(
+      playlists.length ?
+      new ApiResponse(200, playlists, "User playlist data fetched succesfully.")
+      :
+      new ApiResponse(200, playlists, "No playlist found.")
+
+  )
     
 })
 
@@ -50,7 +88,58 @@ const getPlaylistById = asyncHandler(async (req, res) => {
     if(!isPlaylist){
         throw new ApiError(400, "Playlist not Found");
     }
-    
+    const playListDetail = await Playlist.aggregate([
+      {
+        $match:{
+          _id : mongoose.Types.ObjectId(playlistId),
+        }
+      },
+      {
+        $lookup: {
+        from: "videos",
+        localField: "videos",
+        foreignField: "_id",
+        as: "details",
+        pipeline: [
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "owner",
+                    foreignField: "_id",
+                    as: "userInfo",
+                    pipeline: [
+                        {
+                            $project:{
+                                fullname: 1,
+                                username: 1,
+                                avatar: 1
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields: {
+                    userInfo: {
+                        $first: "$userInfo"
+                    }
+                }
+            }
+        ]
+    }
+}
+])
+
+  if(!playListDetail) {
+      throw new ApiError(500, "Something went wrong while getting playlist.")
+  }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, playListDetail, "Success")
+    );
+
 })
 
 // TODO Done: add video to playlist

@@ -8,7 +8,7 @@ import { Playlist } from "../models/playlist.models.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import {uploadOnCloudinary, deleteFilesCloudnary} from "../utils/FileUploadAndDelete.js"
-import {getVideoComments}from "./comment.controllers.js"
+import {getVideoComments}from "./comment.controller.js"
 import {getVideoLikes} from "./like.controller.js"
 
 //TODO Done: get all videos based on query, sort, pagination
