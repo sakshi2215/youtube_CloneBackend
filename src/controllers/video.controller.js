@@ -276,7 +276,8 @@ const updateVideo = asyncHandler(async (req, res) => {
     .json( new ApiResponse(200, video, "Video Succesfully Updated"));
 })
 
-//TODO DONE: delete video
+//TODO DONE: Delete video - Deleted the video, comments, and likes associated with the video.
+//Also try to delete the video from Cloudinary
 const deleteVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     if(!isValidObjectId(videoId)) throw new ApiError("Invalid VideoId");
@@ -314,7 +315,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
     const videoComment = await Comment.find({
         video: mongoose.Types.ObjectId(videoId)
     })
-    //2. Extract the comment ids "hehe enumeration function- Check notes"
+    //2. Extract the comment ids "hehe enumeration function- Check NOTION notes"
     const commentID = videoComment.map(comment => comment._id)
     //3. Delete all the likes associated with comment id array
     const deleteCommentLike = await Like.deleteMany({
