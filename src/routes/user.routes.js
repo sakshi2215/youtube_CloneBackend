@@ -40,7 +40,7 @@ router.route("/change-password").post(verifyJWT, changeCurrentPassword)
 
 router.route("/update-avatar").patch(verifyJWT, upload.single("avatar"), updateAvatar)
 
-router.route("/cover-image").patch(verifyJWT, upload.single("coverImage"), updateCoverImage)
+router.route("/updatecover-image").patch(verifyJWT, upload.single("coverImage"), updateCoverImage)
 
 router.route("/update-account").patch(verifyJWT, updateAccountDetails)
 

@@ -137,9 +137,9 @@ const publishAVideo = asyncHandler(async (req, res) => {
 
 
     //Check if title is there or not, title is required
-    if(!title) throw new ApiError(400, "Title is required")
+    if(!title?.trim()) throw new ApiError(400, "Title is required")
 
-    if(!description) throw new ApiError(400, "Description is required")
+    if(!description?.trim()) throw new ApiError(400, "Description is required")
     
     //Fetch the local file path for video
     const videoLocalPath = req.files?.videoFile[0]?.path;
@@ -147,11 +147,12 @@ const publishAVideo = asyncHandler(async (req, res) => {
     
     // //Check the file type of video
     const videoFileType = req.files?.videoFile[0]?.mimetype;
-
-    if(!(videoFileType === "video/mp4" || videoFileType==="video/webm" 
-        || videoFileType==="video/x-m4v" )){
-            throw new ApiError(400, "Only video files are allowed")
-        }
+    
+    //CAN BE APPLIED IN FUTURE COZ I HAVE LIMIT IN FILE SIZE
+    // if(!(videoFileType === "video/mp4" || videoFileType==="video/webm" 
+    //     || videoFileType==="video/x-m4v" )){
+    //         throw new ApiError(400, "Only video files are allowed")
+    //     }
     
 
     //Fetch the local file path for thumbnail
@@ -162,6 +163,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
     if(!thumbnailLocalPath) throw new ApiError(400, "Thumbnail is required")
 
     //Upload video and thumbnail to cloudinary
+    //console.log(videoLocalPath)
     const videoFile = await uploadOnCloudinary(videoLocalPath);
     if (!videoFile) throw new ApiError(500, "Error while Uploading Video File");
 
@@ -225,8 +227,8 @@ const updateVideo = asyncHandler(async (req, res) => {
     
 
     //check if video exists or not
-    const isvideo = await Video.findById(videoId);
-    if(!isvideo){
+    const video = await Video.findById(videoId);
+    if(!video){
         throw new ApiError(400, "Video does not exists");
     }
 
@@ -235,31 +237,25 @@ const updateVideo = asyncHandler(async (req, res) => {
     
 
     //Check if title is there or not, title is required
-    if(!title) throw new ApiError(400, "Title is required")
-    
-    //check if description is there or not
-    if(!description) throw new ApiError(400, "Description is required")
-        
-    //Get thumbnail Local Path
-    let thumbnailLocalPath;
-    if(req.file && Array.isArray(req.file.thumbnail) && req.file.thumbnail.length >0){
-        thumbnailLocalPath = req.file.thumbnail[0].path;
+    if(!(title || description)){
+        throw new ApiError(400, "Title or description is required")
     }
-    let thumbnail;
-    if(thumbnailLocalPath){
-        //Delete the old thumnail from cloudinary and upload the new One
-        const video = await Video.findById(videoId);
-        if(!video) throw new ApiError(404, "Video not found");
-        const oldThumbnailUrl = video.thumbnail;
-
-        if(!oldThumbnailUrl) throw new ApiError(400, "Thumbnail is not in Database!!!")
-        const deleteResponse = await deleteFilesCloudnary(oldThumbnailUrl);
-        if(!deleteResponse) throw new ApiError(500, "Error while deleting old thumbnail")
-        thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
-        if(!thumbnail) throw new ApiError(500, "Error while Uploading Thumbnail File");
-        }
     
-    const video = await Video.findByIdAndUpdate(
+    let thumbnail;
+    if (req.file?.thumbnail?.length > 0) {
+        const thumbnailLocalPath = req.file.thumbnail[0].path;
+
+        // Delete old thumbnail from Cloudinary
+        const oldThumbnailUrl = video.thumbnail;
+        if (oldThumbnailUrl) {
+            const deleteResponse = await deleteFilesCloudnary(oldThumbnailUrl);
+            if (!deleteResponse) throw new ApiError(500, "Error while deleting old thumbnail");
+        }
+        // Upload the new thumbnail
+        thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
+        if (!thumbnail) throw new ApiError(500, "Error while uploading thumbnail file");
+    }
+    const updatedvideo = await Video.findByIdAndUpdate(
         videoId,
         {
             title,
@@ -268,12 +264,12 @@ const updateVideo = asyncHandler(async (req, res) => {
         },
         {new: true}
     )
-    if(!video){
+    if(!updatedvideo){
         throw new ApiError(400, "Something Went Wrong after Updating the Video");
     }
     return res
     .status(200)
-    .json( new ApiResponse(200, video, "Video Succesfully Updated"));
+    .json( new ApiResponse(200, updatedvideo, "Video Succesfully Updated"));
 })
 
 //TODO DONE: delete video

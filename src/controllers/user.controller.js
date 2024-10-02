@@ -253,7 +253,7 @@ const  changeCurrentPassword= asyncHandler(async(req, res)=>{
     //update the password
     //send response
     const {oldPassword, newPassword}= req.body
-
+    //console.log(oldPassword)
 
     const user = await User.findById(req.user._id)
 
@@ -284,15 +284,19 @@ const  changeCurrentPassword= asyncHandler(async(req, res)=>{
 const getCurrentUser =  asyncHandler(async(req, res)=>{
     return res.status(200)
     .json(
-        200, req.user, "Current User Fetched SuccessFully"
+        new ApiResponse(
+           200, req.user, "Current User Fetched SuccessFully"
+        )
+        
     )
 })
 
+//Can only update fullname or email
 const updateAccountDetails = asyncHandler(async(req, res)=>{
 
     const {fullname, email } = req.body
-
-    if(!fullname || !email){
+    //console.log(fullname)
+    if(!(fullname || username)){
         throw new ApiError(400, "Fullname and Email are required")
     }
     const user = await User.findByIdAndUpdate(req.user?._id
@@ -317,8 +321,8 @@ const updateAvatar = asyncHandler(async(req,res)=>{
 
     const avatarLocalPath = await req.file?.path
 
-    const imageTobeDeleted = await req.user?.coverImage
-
+    const imageTobeDeleted = await req.user?.avatar
+    //console.log(avatarLocalPath)
     if(!avatarLocalPath){
         throw new ApiError(400, "Avatar File is Required")
     }
@@ -386,10 +390,11 @@ const updateCoverImage = asyncHandler(async(req,res)=>{
     
 
     const deleteimage= await deleteFilesCloudnary(imageTobeDeleted)
-
-    if(!deleteimage){
-        throw new ApiError(400, "Error while deleting the Avatar")
-    }
+     
+    //Since coverImage can or cannot present 
+    // if(!deleteimage){
+    //     throw new ApiError(400, "Error while deleting the Avatar")
+    // }
 
     return res.status(200)
     .json(
@@ -430,10 +435,10 @@ const getuserChannelProfile = asyncHandler(async(req,res)=>{
     {
         $addFields: {
             subscribersCount:{
-                $size:"$subscribers"
+                $ifNull: [{ $size: "$subscribers" }, 0],
             },
             channelSubscribedToCount :{
-                $size: "$subscribedTo"
+                $ifNull: [{ $size: "$subscribedTo" }, 0],
             },
             
             isSubscribed:{
