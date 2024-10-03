@@ -42,13 +42,14 @@ const createTweet = asyncHandler(async (req, res) => {
     return res
     .status(200)
     .json(
-        new ApiResponse(200,"Successfully created the Tweet")
+        new ApiResponse(200,tweetData,"Successfully created the Tweet")
     );
 })
 
 // TODO Done: get user tweets  
 const getUserTweets = asyncHandler(async (req, res) => {
-    const {userId} = req.user?._id;
+    const userId = req.user._id
+    //console.log(req.user)
     if(!isValidObjectId(userId)){
         throw new ApiError(400, "Invalid User Id");
     }
@@ -56,7 +57,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
     const userTweet = await Tweet.aggregate([
         {
             $match:{
-                owner : mongoose.Types.ObjectId(userId),
+                owner : userId,
             }
         },
         {
@@ -75,7 +76,8 @@ const getUserTweets = asyncHandler(async (req, res) => {
         {
             $project: {
                 _id: 1,
-                likeCount: 1
+                likeCount: 1,
+                content:1,
             }
         }
     ])
@@ -118,12 +120,17 @@ const updateTweet = asyncHandler(async (req, res) => {
         tweetId,
         {
             content: content
+        },{
+            new:true
         }
-    )
+    );
+
+    // Exclude the owner from the response
+    const { owner, ...tweetData } = tweetUpdate.toObject();
     return res
     .status(200)
     .json(
-        new ApiResponse(200, tweetUpdate, "Successfully Updated the tweet")
+        new ApiResponse(200, tweetData, "Successfully Updated the tweet")
     );
 })
 
