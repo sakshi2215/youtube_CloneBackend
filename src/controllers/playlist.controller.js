@@ -9,7 +9,7 @@ const createPlaylist = asyncHandler(async (req, res) => {
     const {name, description} = req.body
 
     
-    if(!name || !description){
+    if(!name && !description){
         throw new ApiError(400, "Name and description are required")
     }
 
@@ -88,10 +88,11 @@ const getPlaylistById = asyncHandler(async (req, res) => {
     if(!isPlaylist){
         throw new ApiError(400, "Playlist not Found");
     }
+    const playlistIdObj = new mongoose.Types.ObjectId(playlistId)
     const playListDetail = await Playlist.aggregate([
       {
         $match:{
-          _id : mongoose.Types.ObjectId(playlistId),
+          _id : playlistIdObj,
         }
       },
       {
@@ -260,7 +261,7 @@ const updatePlaylist = asyncHandler(async (req, res) => {
     if(!isPlaylist){
         throw new ApiError(400, "Playlist not Found");
     }
-    if(!name || !description){
+    if(!(name || description)){
         throw new ApiError(400, "Name and description are required")
     }
 
