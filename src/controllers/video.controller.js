@@ -8,7 +8,7 @@ import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import {uploadOnCloudinary, deleteFilesCloudnary} from "../utils/FileUploadAndDelete.js"
 import {getVideoComments}from "./comment.controller.js"
-import {getVideoLikes} from "./like.controller.js"
+import {getVideoLikeCount} from "./like.controller.js"
 
 //TODO Done: get all videos based on query, sort, pagination
 const getAllVideos = asyncHandler(async (req, res) => {
@@ -204,7 +204,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     //get comment related to video from comment controller
     const comments = await getVideoComments(videoId);
     //get likes related to video from likes contrller
-    const likes = await getVideoLikes(videoId);
+    const likes = await getVideoLikeCount(videoId);
     
     const videoData = {
         ...video.toObject(),

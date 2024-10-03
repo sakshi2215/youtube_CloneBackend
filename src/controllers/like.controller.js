@@ -5,10 +5,11 @@ import {asyncHandler} from "../utils/asyncHandler.js"
 import {Video} from "../models/video.models.js"
 import {Comment} from "../models/comment.models.js"
 import {Like} from "../models/like.models.js"
+import {Tweet} from "../models/tweet.models.js"
 //TODO Done: toggle like on video
 const toggleVideoLike = asyncHandler(async (req, res) => {
     const {videoId} = req.params
-    const{userId} = req.user?._id;
+    const userId = req.user?._id;
     if(!isValidObjectId(videoId)){
         throw new ApiError(400,"Invalid Video Id");
     }
@@ -59,7 +60,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     return res
     .status(200)
     .json(
-        new ApiResponse(200, Likedata, message= liked? "Video liked Successfully" : "Video Unliked Successfully")
+        new ApiResponse(200, Likedata, liked? "Video liked Successfully" : "Video Unliked Successfully")
     );
     
 })
@@ -67,7 +68,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
  //TODO Done: toggle like on comment
 const toggleCommentLike = asyncHandler(async (req, res) => {
     const {commentId} = req.params
-    const{userId} = req.user?._id;
+    const userId = req.user?._id;
     if(!isValidObjectId(commentId)){
         throw new ApiError(400,"Invalid Comment Id");
     }
@@ -84,7 +85,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     //check if the user can liked the comment or not
     const existingLike = await Like.findOne({
         comment: commentId,
-        likedby: commentId,
+        likedby: userId,
     })
 
     if(existingLike){
@@ -118,7 +119,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     return res
     .status(200)
     .json(
-        new ApiResponse(200, Likedata, message= liked? "Comment liked Successfully" : "Comment Unliked Successfully")
+        new ApiResponse(200, Likedata, liked? "Comment liked Successfully" : "Comment Unliked Successfully")
     );
     
 
@@ -129,7 +130,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 const toggleTweetLike = asyncHandler(async (req, res) => {
     const {tweetId} = req.params
    
-    const{userId} = req.user?._id;
+    const userId = req.user?._id;
     if(!isValidObjectId(tweetId)){
         throw new ApiError(400,"Invalid Comment Id");
     }
@@ -181,13 +182,58 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
     return res
     .status(200)
     .json(
-        new ApiResponse(200, Likedata, message= liked? "Tweet liked Successfully" : "Tweet Unliked Successfully")
+        new ApiResponse(200, Likedata, liked? "Tweet liked Successfully" : "Tweet Unliked Successfully")
     );
 }
 )
 
+const getLikedVideosByUser = asyncHandler(async (req, res) => {
+    const userId = req.user._id; // Assuming you have user info in req.user
+
+    // Find all likes by the user and populate the video details
+    const likedVideos = await Like.aggregate([
+        {
+            $match: {
+                likedby: userId, // Match likes by the user
+            },
+        },
+        {
+            $lookup: {
+                from: 'video', // The name of the video collection
+                localField: 'video', // Field from the like document
+                foreignField: '_id', // Field from the video document
+                as: 'videoDetails', // Name for the output array
+            },
+        },
+        {
+            $unwind: {
+                path: '$videoDetails',
+                preserveNullAndEmptyArrays: true, // Keep likes without associated video
+            },
+        },
+        {
+            $project: {
+                _id: 1, // Include the like document ID
+                'videoDetails._id': 1,
+                'videoDetails.title': 1, // Include other fields as needed
+                'videoDetails.description': 1,
+                'videoDetails.thumbnail': 1,
+                // You can add more fields here as required
+            },
+        },
+    ]);
+
+    // If no videos liked
+    if (!likedVideos || likedVideos.length === 0) {
+        return res.status(200).json(new ApiResponse(200, [], "No liked videos found."));
+    }
+
+    return res.status(200).json(new ApiResponse(200, likedVideos, "Successfully fetched liked videos."));
+});
+
+
  //TODO Done: get likes associated with video
-const  getVideoLikes = asyncHandler(async(req,res)=>{
+const  getVideoLikeCount = asyncHandler(async(req,res)=>{
    const {videoId} = req.params;
    if(!isValidObjectId(videoId)){
     throw new ApiError(400, "Invalid videoId");
@@ -207,14 +253,14 @@ const  getVideoLikes = asyncHandler(async(req,res)=>{
     },
     { $count: 'likeCount' }
    ])
-   if(!getVideoLikes){
+   if(!getlikes){
     throw new ApiError(500, "Something went wrong after getting like count");
    }
 
    return res
    .status(200)
    .json(
-    new ApiResponse(200, getVideoLikes, "Successfully fetched like count")
+    new ApiResponse(200, getlikes, "Successfully fetched like count")
    );
 })
 
@@ -222,5 +268,6 @@ export {
     toggleCommentLike,
     toggleTweetLike,
     toggleVideoLike,
-    getVideoLikes
+    getVideoLikeCount,
+    getLikedVideosByUser
 }
