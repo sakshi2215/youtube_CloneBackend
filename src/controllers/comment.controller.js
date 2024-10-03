@@ -21,11 +21,13 @@ const getVideoComments = asyncHandler(async (req, res) => {
     }
     const pageNumber = parseInt(page, 10);
     const limitSize = parseInt(limit, 10);
-
+    // const comments = await Comment.find({ video: videoId });
+    // console.log("Comments for video:", comments);
+    const videoIdObj = new mongoose.Types.ObjectId(videoId);
     const getComments = await Comment.aggregate([
         {
             $match : {
-                video: mongoose.Types.ObjectId(videoId),
+                video: videoIdObj,
             }
         },
         {   //likes associated with comments
@@ -61,17 +63,17 @@ const getVideoComments = asyncHandler(async (req, res) => {
                 ]
             }
         },
-        {
-            $addFields: {
-                details: {
-                    $first: "$user_details"
-                }
-            }
-        },
+        // {
+        //     $addFields: {
+        //         details: {
+        //             $first: "$user_details"
+        //         }
+        //     }
+        // },
         {
             $project: {
-                comment_likes: 0, // excluding the `comment_likes` from the final result
-
+                comment_likes: 0, // Exclude `comment_likes` from the final result
+                //user_details: 1
             }
         },
         {
@@ -117,11 +119,11 @@ const addComment = asyncHandler(async (req, res) => {
     if(!user){
         throw new ApiError(400, "Invalid User id");
     }
-
+    const videoIdObj = new mongoose.Types.ObjectId(videoId)
     const commentResponse = await Comment.create({
         content: comment,
-        video: videoId,
-        user: user,
+        video: videoIdObj,
+        owner: user,
     })
     if(!commentResponse){
         throw new ApiError(500,"Something went wrong While posting the Comment");
