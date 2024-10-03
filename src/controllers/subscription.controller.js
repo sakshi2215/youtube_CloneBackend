@@ -8,7 +8,7 @@ import {asyncHandler} from "../utils/asyncHandler.js"
  // TODO Done: toggle subscription
 const toggleSubscription = asyncHandler(async (req, res) => {
     const {channelId} = req.params
-    const {userId} = req.user
+    const userId = req.user?._id
    
 
     if(!isValidObjectId(channelId)){
@@ -60,7 +60,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     const {channelId} = req.params
 
     if(!isValidObjectId(channelId)){
-        throw new ApiError(400, "Invalid channel Id");
+        throw new ApiError(400,"Invalid Channel Id");
     }
     
     //check if channel exists or not
@@ -68,11 +68,11 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     if(!channel){
         throw new ApiError(400, "Channel does not exists");
     }
-
+    const channelIdObj = new mongoose.Types.ObjectId(channelId)
     const subscribers = await Subcription.aggregate([
         {
            $match: {
-            channel: mongoose.Types.ObjectId(channelId)
+            channel: channelIdObj
            } 
         },
         {
@@ -114,7 +114,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
 
 //TODO Done: controller to return channel list to which user has subscribed
 const getSubscribedChannels = asyncHandler(async (req, res) => {
-    const { subscriberId } = req.params
+    const {subscriberId} = req.params
     // Validate subscriberId
     if (!isValidObjectId(subscriberId)) {
         throw new ApiError(400, "Invalid Subscriber Id");
@@ -125,11 +125,12 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     if (!subscriber) {
         throw new ApiError(404, "Subscriber does not exist");
     }
+    const subscriberIdObj = new mongoose.Types.ObjectId(subscriberId)
      // Aggregate to get channels the subscriber is subscribed to
      const subscribedChannels = await Subcription.aggregate([
         {
             $match: {
-                subscriber: mongoose.Types.ObjectId(subscriberId),
+                subscriber: subscriberIdObj,
             },
         },
         {
